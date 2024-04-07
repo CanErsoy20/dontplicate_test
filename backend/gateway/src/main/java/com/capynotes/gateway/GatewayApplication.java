@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class GatewayApplication {
-
+	// This is a comment
 	public static void main(String[] args) {
 		SpringApplication.run(GatewayApplication.class, args);
 	}
