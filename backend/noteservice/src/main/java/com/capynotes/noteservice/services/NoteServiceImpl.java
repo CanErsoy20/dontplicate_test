@@ -83,6 +83,24 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public Note uploadRecording(MultipartFile multipartFile, Long userId ) throws IOException, FileUploadException {
+        String fileName = UUID.randomUUID().toString() + "_" + multipartFile.getOriginalFilename();
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentLength(multipartFile.getSize());
+        try {
+            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, multipartFile.getInputStream(), metadata));
+        } catch (Exception e) {
+            throw new FileUploadException("Could not upload the file!" + e.toString());
+        }
+
+        String url = amazonS3.getUrl(bucketName, fileName).toString();
+        LocalDateTime dateTime = LocalDateTime.now();
+        Note note = new Note(fileName, userId, url, dateTime, NoteStatus.TRANSCRIBING);
+        note = noteRepository.save(note);
+        return note;
+    }
+
+    @Override
     public Note uploadAudioFromURL(String videoUrl, String fileName, Long userId) {
         //String newName = UUID.randomUUID().toString() + "_" + fileName;
         LocalDateTime uploadTime = LocalDateTime.now();
