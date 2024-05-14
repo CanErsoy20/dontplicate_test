@@ -34,6 +34,7 @@ public class NoteController {
 
     String QUEUE_NAME = "transcription_queue";
     String YOUTUBE_QUEUE_NAME = "youtube_queue";
+    String UDEMY_QUEUE_NAME = "udemy_queue";
 
     public NoteController(NoteService noteService) {
         this.noteService = noteService;
@@ -129,6 +130,46 @@ public class NoteController {
             return new Response("Note retrieved successfully.", 200, note);
         } catch (Exception e) {
             return new Response("An error occurred." + e.toString(), 500, null);
+        }
+    }
+
+    @PostMapping("/from-udemy")
+    public ResponseEntity<?> uploadFromUdemy(@RequestBody VideoTranscribeRequest videoTranscribeRequest) {
+        Response response;
+        String videoUrl = videoTranscribeRequest.getVideoUrl();
+        String fileName = videoTranscribeRequest.getNoteName();
+        Long userId = videoTranscribeRequest.getUserId();
+        try {
+            Note note = noteService.uploadAudioFromURL(videoUrl, fileName, userId);
+            String jsonString = "{\"noteId\":" + note.getId().toString() + ", \"videoUrl\":\"" + videoUrl + "\", \"noteName\":\"" + fileName + "\"}";
+            channel.basicPublish("", UDEMY_QUEUE_NAME, null, jsonString.getBytes(StandardCharsets.UTF_8));
+            System.out.println(" [x] Sent note with id '" + note.getId().toString() + "'");
+            response = new Response("Note created.", 200, note);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response = new Response("An error occurred." + e.toString(), 500, null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/from-recording")
+    public ResponseEntity<?> uploadFromRecording(@RequestBody VideoTranscribeRequest videoTranscribeRequest) {
+        Response response;
+        String videoUrl = videoTranscribeRequest.getVideoUrl();
+        String fileName = videoTranscribeRequest.getNoteName();
+        Long userId = videoTranscribeRequest.getUserId();
+        try {
+            Note note = noteService.uploadAudioFromURL(videoUrl, fileName, userId);
+            String jsonString = "{\"noteId\":" + note.getId().toString() + ", \"videoUrl\":\"" + videoUrl + "\", \"noteName\":\"" + fileName + "\"}";
+            channel.basicPublish("", YOUTUBE_QUEUE_NAME, null, jsonString.getBytes(StandardCharsets.UTF_8));
+            System.out.println(" [x] Sent note with id '" + note.getId().toString() + "'");
+            response = new Response("Note created.", 200, note);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response = new Response("An error occurred." + e.toString(), 500, null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
